@@ -1,3 +1,5 @@
+#![cfg(feature = "f411ceu6")]
+
 use assign_resources::assign_resources;
 use embassy_executor::task;
 use embassy_stm32::peripherals::USB_OTG_FS;

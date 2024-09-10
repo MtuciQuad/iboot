@@ -21,7 +21,6 @@ embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", features
 embassy-futures = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-stm32 = { git = "https://github.com/embassy-rs/embassy.git", features = [
     "memory-x",
-    "stm32f411ce",
     "time-driver-any",
     "exti",
     "unstable-pac",
@@ -57,6 +56,7 @@ opt-level = "z"
 incremental = true
 
 [features]
-default = ["f411ceu6"]
-ifrc_iflight_f722_blitz = []
-f411ceu6 = []
+default = ["gepr_geprc_f722_aio"]
+ifrc_iflight_f722_blitz = ["embassy-stm32/stm32f722re"]
+gepr_geprc_f722_aio = ["embassy-stm32/stm32f722re"]
+f411ceu6 = ["embassy-stm32/stm32f411ce"]

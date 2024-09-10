@@ -1,4 +1,4 @@
-#![cfg(feature = "ifrc_iflight_f722_blitz")]
+#![cfg(feature = "gepr_geprc_f722_aio")]
 
 use assign_resources::assign_resources;
 use embassy_executor::task;
