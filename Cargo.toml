@@ -56,7 +56,7 @@ opt-level = "z"
 incremental = true
 
 [features]
-default = ["gepr_geprc_f722_aio"]
+default = []
 ifrc_iflight_f722_blitz = ["embassy-stm32/stm32f722re"]
 gepr_geprc_f722_aio = ["embassy-stm32/stm32f722re"]
 f411ceu6 = ["embassy-stm32/stm32f411ce"]
