@@ -7,11 +7,9 @@ use core::ptr::addr_of_mut;
 use defmt::info;
 use defmt_rtt as _;
 use embassy_futures::select::{select, Either};
-use embassy_stm32::time::mhz;
-use embassy_stm32::usb::Driver;
-use embassy_stm32::{bind_interrupts, peripherals, usb};
 use embassy_usb::class::cdc_acm::{CdcAcmClass, State};
 use embassy_usb::Builder;
+use iboot::*;
 use panic_probe as _;
 
 use embassy_executor::{task, Spawner};
@@ -22,15 +20,7 @@ use static_cell::StaticCell;
 
 static mut USER_RESET: Option<extern "C" fn()> = None;
 
-bind_interrupts!(struct Irqs {
-    OTG_FS => usb::InterruptHandler<peripherals::USB_OTG_FS>;
-});
-
 static mut DEL: u64 = 50;
-
-// THIS CONFIG IS FOR F411CE, IT MUST BE FIXED FOR ANOTHER CHIP
-const FLASH_START: u32 = 0x10000u32;
-const FLASH_END: u32 = FLASH_START + 65536u32 + 393216u32;
 
 #[task]
 async unsafe fn blink(mut led: Output<'static>) {
@@ -40,16 +30,6 @@ async unsafe fn blink(mut led: Output<'static>) {
         led.set_low();
         Timer::after(Duration::from_millis(DEL)).await;
     }
-}
-
-#[task]
-async fn usb_task(
-    mut usb: embassy_usb::UsbDevice<
-        'static,
-        embassy_stm32::usb::Driver<'static, peripherals::USB_OTG_FS>,
-    >,
-) {
-    usb.run().await;
 }
 
 fn magic_mut_ptr() -> *mut u32 {
@@ -98,43 +78,16 @@ async fn main(spawner: Spawner) {
         }
     }
 
-    let p = {
-        let mut config = embassy_stm32::Config::default();
-        {
-            use embassy_stm32::rcc::*;
-            config.enable_debug_during_sleep = true;
-            config.rcc.hse = Some(Hse {
-                freq: mhz(25),
-                mode: HseMode::Oscillator,
-            });
-            config.rcc.pll_src = PllSource::HSE;
-            config.rcc.pll = Some(Pll {
-                prediv: PllPreDiv::DIV25,
-                mul: PllMul::MUL192,
-                divp: Some(PllPDiv::DIV2),
-                divq: Some(PllQDiv::DIV4),
-                divr: None,
-            });
-            config.rcc.sys = Sysclk::PLL1_P;
-            config.rcc.ahb_pre = embassy_stm32::pac::rcc::vals::Hpre::DIV1;
-            config.rcc.apb1_pre = APBPrescaler::DIV2;
-            config.rcc.apb2_pre = APBPrescaler::DIV1;
-        }
-        embassy_stm32::init(config)
-    };
+    let p = create_peripherals();
+    let r = split_resources!(p);
 
     info!("start");
 
-    let led = Output::new(p.PC13, Level::High, Speed::Low);
+    let led = Output::new(r.led.led, Level::High, Speed::Low);
 
     spawner.must_spawn(blink(led));
 
-    static EP_OUT_BUF_STATIC: StaticCell<[u8; 256]> = StaticCell::new();
-    let ep_out_buffer = EP_OUT_BUF_STATIC.init([0u8; 256]);
-    let mut config = embassy_stm32::usb::Config::default();
-    // config.vbus_detection = true;
-    config.vbus_detection = false;
-    let driver = Driver::new_fs(p.USB_OTG_FS, Irqs, p.PA12, p.PA11, ep_out_buffer, config);
+    let driver = create_usb_driver(r.usb);
 
     // Create embassy-usb Config
     let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
@@ -179,7 +132,7 @@ async fn main(spawner: Spawner) {
     spawner.must_spawn(usb_task(usb));
 
     Timer::after_millis(300).await;
-    let mut f = Flash::new_blocking(p.FLASH);
+    let mut f = Flash::new_blocking(r.flash.flash);
 
     match select(
         Timer::after_secs(5),

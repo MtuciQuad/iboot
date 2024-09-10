@@ -37,6 +37,8 @@ panic-halt = "0.2.0"
 panic-probe = { version = "0.3.2", features = ["print-defmt"] }
 static_cell = { version = "2.1.0", features = ["nightly"] }
 
+assign-resources = { git = "https://github.com/adamgreig/assign-resources.git" }
+
 [[bin]]
 name = "iboot"
 test = false
@@ -55,4 +57,6 @@ opt-level = "z"
 incremental = true
 
 [features]
+default = ["f411ceu6"]
 ifrc_iflight_f722_blitz = []
+f411ceu6 = []
