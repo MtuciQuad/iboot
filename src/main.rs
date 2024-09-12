@@ -38,7 +38,7 @@ fn magic_mut_ptr() -> *mut u32 {
         static mut magic: u32;
     }
 
-    addr_of_mut!(magic)
+    unsafe { addr_of_mut!(magic) }
 }
 
 /// Read magic value to determine if

@@ -58,7 +58,7 @@ pub fn create_peripherals() -> Peripherals {
 
 assign_resources! {
     led: LedRes {
-        led: PC4
+        led: PC15
     },
     usb: UsbRes {
         usb: USB_OTG_FS,
